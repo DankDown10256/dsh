@@ -13,6 +13,8 @@
 #include <limits.h>
 #include <time.h>
 #include <signal.h>
+#include "src/py_venv.h"
+#include "src/git.h"
 
 #define SLOW_CMD_THRESHOLD_SEC 5
 #define MAX_ARGS 64
@@ -75,91 +77,6 @@ static void ensure_default_path(void) {
     setenv("PATH", new_path, 1);
 }
 
-static int is_python_venv(char *out_path, size_t out_size) {
-    char *candidates[] = {"venv", ".venv", "env"};
-    struct stat st;
-    for (size_t i = 0; i < sizeof(candidates) / sizeof(candidates[0]); i++) {
-        if (stat(candidates[i], &st) == 0 && S_ISDIR(st.st_mode)) {
-            snprintf(out_path, out_size, "%s", candidates[i]);
-            return 1;
-        }
-    }
-    return 0;
-}
-
-static char saved_path[4096];
-static int venv_active = 0;
-static int activate_python_venv(const char *venv_path) {
-    char abs_venv[PATH_MAX];
-    if (!realpath(venv_path, abs_venv)) {
-        perror("realpath");
-        return 0;
-    }
-
-    const char *old_path = getenv("PATH");
-    if (old_path) {
-        snprintf(saved_path, sizeof(saved_path), "%s", old_path);
-    }
-
-    setenv("VIRTUAL_ENV", abs_venv, 1);
-    printf("Python venv successfully activated!\n");
-
-    char new_path[4096];
-    snprintf(new_path, sizeof(new_path), "%s/bin:%s", abs_venv, old_path ? old_path : "");
-    setenv("PATH", new_path, 1);
-
-    unsetenv("PYTHONHOME");
-    venv_active = 1;
-
-    return 1;
-}
-
-static int deactivate_python_venv(void) {
-    if (!venv_active) {
-        printf("No active venv\n");
-        return 0;
-    }
-
-    setenv("PATH", saved_path, 1);
-    unsetenv("VIRTUAL_ENV");
-    printf("Python venv successfully deactivated!\n");
-    venv_active = 0;
-
-    return 1;
-}
-
-static int is_git_repo(void) {
-    struct stat st;
-    return stat(".git", &st) == 0 && S_ISDIR(st.st_mode);
-}
-
-static int get_git_branch(char *out, size_t out_size) {
-    FILE *f = fopen(".git/HEAD", "r");
-    if (!f) return 0;
-
-    char line[256];
-    if (!fgets(line, sizeof(line), f)) {
-        fclose(f);
-        return 0;
-    }
-    fclose(f);
-
-    line[strcspn(line, "\n")] = 0;
-
-    const char *prefix = "ref: refs/heads/";
-    size_t prefix_len = strlen(prefix);
-
-    if (strncmp(line, prefix, prefix_len) == 0) {
-        snprintf(out, out_size, "%s", line + prefix_len);
-    } else {
-        char short_hash[8];
-        strncpy(short_hash, line, 7);
-        short_hash[7] = '\0';
-        snprintf(out, out_size, "detached:%s", short_hash);
-    }
-    return 1;
-}
-
 static int run_builtin(char **argv) {
     if (strcmp(argv[0], "exit") == 0) {
         exit(0);
@@ -179,12 +96,8 @@ static int run_builtin(char **argv) {
         return 1;
     }
     if (strcmp(argv[0], "deactivate") == 0) {
-        if (venv_active == 1) {
-            deactivate_python_venv();
-            return 1;
-        } else {
-            printf("There is no venv activate\n");
-        }
+        deactivate_python_venv();
+        return 1;
     }
     if (strcmp(argv[0], "help") == 0) {
         printf("Help Menu\n");
@@ -252,7 +165,7 @@ int main(void) {
     const char *user = pw ? pw->pw_name : "?";
 
     while (1) {
-        char prompt[256];
+        char prompt[512];
         char venv_path[64];
         char cwd[PATH_MAX];
         char display_cwd[PATH_MAX];
@@ -277,10 +190,10 @@ int main(void) {
         if (!input) {
             break;
         }
-        add_history(line);
 
         strncpy(line, input, MAX_LINE - 1);
         line[MAX_LINE - 1] = '\0';
+        add_history(line);
         free(input);
 
         int argc = parse_line(line, argv);
