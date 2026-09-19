@@ -11,7 +11,9 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 #include <limits.h>
+#include <time.h>
 
+#define SLOW_CMD_THRESHOLD_SEC 5
 #define MAX_ARGS 64
 #define MAX_LINE 1024
 #define COLOR_RESET   "\033[0m"
@@ -177,6 +179,8 @@ static int run_builtin(char **argv) {
 }
 
 static void run_external(char **argv) {
+    struct timespec start, end;
+    clock_gettime(CLOCK_MONOTONIC, &start);
     char *new_argv[MAX_ARGS];
     if (strcmp(argv[0], "ls") == 0) {
         new_argv[0] = "ls";
@@ -201,6 +205,15 @@ static void run_external(char **argv) {
     }
     int status;
     waitpid(pid, &status, 0);
+    clock_gettime(CLOCK_MONOTONIC, &end);
+
+    double elapsed = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
+
+    if (elapsed >= SLOW_CMD_THRESHOLD_SEC) {
+        char notif_cmd[256];
+        snprintf(notif_cmd, sizeof(notif_cmd), "notify-send 'dsh' 'Command %s is finished and took %1.fs'", argv[0], elapsed);
+        system(notif_cmd);
+    }
 }
 
 int main(void) {
