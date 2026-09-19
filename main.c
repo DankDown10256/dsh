@@ -15,6 +15,7 @@
 #include <signal.h>
 #include "src/py_venv.h"
 #include "src/git.h"
+#include "src/pipeline.h"
 
 #define SLOW_CMD_THRESHOLD_SEC 5
 #define MAX_ARGS 64
@@ -106,6 +107,39 @@ static int run_builtin(char **argv) {
         printf("ls: list directories\n");
         printf("cd: move to a given directory path\n");
         printf("acpyvenv: detect and activate a python venv\n");
+    }
+    if (strcmp(argv[0], "|") == 0) {
+        printf("Usage runwith\n");
+        printf("<command> runwith <command>\n");
+        return 1;
+    }
+    int runwith_idx = -1;
+    int i = 0;
+    for (int i = 0; argv[i] != NULL; i++) {
+        if (strcmp(argv[i], "runwith") == 0) {
+            runwith_idx = i;
+            break;
+        }
+    }
+    if (runwith_idx > 0 && argv[runwith_idx + 1] != NULL) {
+        char cmd1[512] = {0};
+        char cmd2[512] = {0};
+
+        for (int i = 0; i < runwith_idx; i++) {
+            strncat(cmd1, argv[i], sizeof(cmd1) - strlen(cmd1) - 1);
+            if (i < runwith_idx -1 ) {
+                strncat(cmd1, " ", sizeof(cmd1) - strlen(cmd1) - 1);
+            }
+        }
+        int j = 0;
+        for (int j = runwith_idx + 1; argv[j] != NULL; j++) {
+            strncat(cmd2, argv[j], sizeof(cmd2) - strlen(cmd2) - 1);
+            if (argv[j + 1] != NULL) {
+                strncat(cmd2, " ", sizeof(cmd2) - strlen(cmd2) - 1);
+            }
+        }
+        run_pipeline(cmd1, cmd2);
+        return 1;
     }
     return 0;
 }

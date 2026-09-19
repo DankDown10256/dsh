@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = -Wall -Wextra -std=c11 -g
 LDFLAGS = -lreadline
 
-SRC = main.c src/py_venv.c src/git.c
+SRC = main.c src/py_venv.c src/git.c src/pipeline.c
 OBJ = $(SRC:.c=.o)
 BIN = dsh
 PREFIX = /usr/local
