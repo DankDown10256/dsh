@@ -58,7 +58,11 @@ static int parse_line(char *line, char **argv) {
 }
 
 static void ensure_default_path(void) {
-    const char *default_paths = "/usr/local/bin:/usr/bin:/bin";
+    char paths[2048];
+    struct passwd *pw = getpwuid(getuid());
+    const char *user = pw ? pw->pw_name : "?";
+    snprintf(paths, sizeof(paths), "/usr/local/bin:/usr/bin:/home/%s/.local/bin:/bin", user);
+    const char *default_paths = paths;
     const char *current_path = getenv("PATH");
 
     if (!current_path || strlen(current_path) == 0) {
