@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -std=c11 -g
-LDFLAGS =
+LDFLAGS = -lreadline
 
 SRC = main.c
 OBJ = $(SRC:.c=.o)

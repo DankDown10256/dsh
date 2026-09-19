@@ -98,16 +98,21 @@ int main(void) {
     const char *user = pw ? pw->pw_name : "?";
 
     while (1) {
+        char prompt[256];
         if (is_git_repo() && get_git_branch(branch, sizeof(branch))) {
-            printf("[%s %s@dsh] ", branch, user);
+            snprintf(prompt, sizeof(prompt), "[%s %s@dsh] ", branch, user);
         } else {
-            printf("[%s@dsh] ", user);
+            snprintf(prompt, sizeof(prompt), "[%s@dsh] ", user);
         }
-        fflush(stdout);
 
-        if (!fgets(line, sizeof(line), stdin)) {
+        char *input = readline(prompt);
+        if (!input) {
             break;
         }
+
+        strncpy(line, input, MAX_LINE - 1);
+        line[MAX_LINE - 1] = '\0';
+        free(input);
 
         int argc = parse_line(line, argv);
         if (argc == 0) continue;
