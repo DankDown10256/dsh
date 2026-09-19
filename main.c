@@ -56,6 +56,20 @@ static int parse_line(char *line, char **argv) {
     return argc;
 }
 
+static void ensure_default_path(void) {
+    const char *default_paths = "/usr/local/bin:/usr/bin:/bin";
+    const char *current_path = getenv("PATH");
+
+    if (!current_path || strlen(current_path) == 0) {
+        setenv("PATH", default_paths, 1);
+        return;
+    }
+
+    char new_path[4096];
+    snprintf(new_path, sizeof(new_path), "%s:%s", current_path, default_paths);
+    setenv("PATH", new_path, 1);
+}
+
 static int is_python_venv(char *out_path, size_t out_size) {
     char *candidates[] = {"venv", ".venv", "env"};
     struct stat st;
@@ -217,6 +231,7 @@ static void run_external(char **argv) {
 }
 
 int main(void) {
+    ensure_default_path();
     char line[MAX_LINE];
     char *argv[MAX_ARGS];
     char branch[128];
