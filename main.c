@@ -66,6 +66,8 @@ static int is_python_venv(char *out_path, size_t out_size) {
     return 0;
 }
 
+static char saved_path[4096];
+static int venv_active = 0;
 static int activate_python_venv(const char *venv_path) {
     char abs_venv[PATH_MAX];
     if (!realpath(venv_path, abs_venv)) {
@@ -73,14 +75,34 @@ static int activate_python_venv(const char *venv_path) {
         return 0;
     }
 
+    const char *old_path = getenv("PATH");
+    if (old_path) {
+        snprintf(saved_path, sizeof(saved_path), "%s", old_path);
+    }
+
     setenv("VIRTUAL_ENV", abs_venv, 1);
+    printf("Python venv successfully activated!\n");
 
     char new_path[4096];
-    const char *old_path = getenv("PATH");
     snprintf(new_path, sizeof(new_path), "%s/bin:%s", abs_venv, old_path ? old_path : "");
     setenv("PATH", new_path, 1);
 
     unsetenv("PYTHONHOME");
+    venv_active = 1;
+
+    return 1;
+}
+
+static int deactivate_python_venv(void) {
+    if (!venv_active) {
+        printf("No active venv\n");
+        return 0;
+    }
+
+    setenv("PATH", saved_path, 1);
+    unsetenv("VIRTUAL_ENV");
+    printf("Python venv successfully deactivated!\n");
+    venv_active = 0;
 
     return 1;
 }
@@ -134,6 +156,14 @@ static int run_builtin(char **argv) {
             printf("Sorry there isn't python env in this directory\n");
         }
         return 1;
+    }
+    if (strcmp(argv[0], "deactivate") == 0) {
+        if (venv_active == 1) {
+            deactivate_python_venv();
+            return 1;
+        } else {
+            printf("There is no venv activate\n");
+        }
     }
     if (strcmp(argv[0], "help") == 0) {
         printf("Help Menu\n");
