@@ -169,6 +169,11 @@ int main(void) {
         char venv_path[64];
         char cwd[PATH_MAX];
         char display_cwd[PATH_MAX];
+        char hostname[HOST_NAME_MAX + 1];
+        if (gethostname(hostname, sizeof hostname) == -1) {
+            strcpy(hostname, "?");
+        }
+        hostname[sizeof hostname - 1] = '\0';
         if (getcwd(cwd, sizeof(cwd)) == NULL) {
             strcpy(cwd, "?");
         }
@@ -181,9 +186,9 @@ int main(void) {
         int has_git = is_git_repo() && get_git_branch(branch, sizeof(branch));
         int has_venv = is_python_venv(venv_path, sizeof(venv_path));
         if (has_git) {
-            snprintf(prompt, sizeof(prompt), "[%s %s@dsh in %s] ", branch, user, display_cwd);
+            snprintf(prompt, sizeof(prompt), "[%s %s@%s in %s] ", branch, user, hostname, display_cwd);
         } else {
-            snprintf(prompt, sizeof(prompt), "[%s@dsh in %s] ", user, display_cwd);
+            snprintf(prompt, sizeof(prompt), "[%s@%s in %s] ", user, hostname, display_cwd);
         }
 
         char *input = readline(prompt);
