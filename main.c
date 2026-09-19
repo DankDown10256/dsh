@@ -184,12 +184,23 @@ int main(void) {
     while (1) {
         char prompt[256];
         char venv_path[64];
+        char cwd[PATH_MAX];
+        char display_cwd[PATH_MAX];
+        if (getcwd(cwd, sizeof(cwd)) == NULL) {
+            strcpy(cwd, "?");
+        }
+        const char *home = getenv("HOME");
+        if (home && strncmp(cwd, home, strlen(home)) == 0) {
+            snprintf(display_cwd, sizeof(display_cwd), "~%s", cwd + strlen(home));
+        } else {
+            snprintf(display_cwd, sizeof(display_cwd), "%s", cwd);
+        }
         int has_git = is_git_repo() && get_git_branch(branch, sizeof(branch));
         int has_venv = is_python_venv(venv_path, sizeof(venv_path));
         if (has_git) {
-            snprintf(prompt, sizeof(prompt), "[%s %s@dsh] ", branch, user);
+            snprintf(prompt, sizeof(prompt), "[%s %s@dsh in %s] ", branch, user, display_cwd);
         } else {
-            snprintf(prompt, sizeof(prompt), "[%s@dsh] ", user);
+            snprintf(prompt, sizeof(prompt), "[%s@dsh in %s] ", user, display_cwd);
         }
 
         char *input = readline(prompt);
