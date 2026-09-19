@@ -177,7 +177,12 @@ int main(void) {
     char line[MAX_LINE];
     char *argv[MAX_ARGS];
     char branch[128];
-
+    static char histfile[PATH_MAX];
+    const char *home = getenv("HOME");
+    if (home) {
+        snprintf(histfile, sizeof(histfile), "%s/.dsh_history", home);
+        read_history(histfile);
+    }
     struct passwd *pw = getpwuid(getuid());
     const char *user = pw ? pw->pw_name : "?";
 
@@ -207,6 +212,7 @@ int main(void) {
         if (!input) {
             break;
         }
+        add_history(line);
 
         strncpy(line, input, MAX_LINE - 1);
         line[MAX_LINE - 1] = '\0';
