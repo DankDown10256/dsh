@@ -1,3 +1,4 @@
+#include <stddef.h>
 #define _XOPEN_SOURCE 700
 #include <stdio.h>
 #include <stdlib.h>
@@ -125,6 +126,18 @@ static int run_builtin(char **argv) {
 }
 
 static void run_external(char **argv) {
+    char *new_argv[MAX_ARGS];
+    if (strcmp(argv[0], "ls") == 0) {
+        new_argv[0] = "ls";
+        new_argv[1] = "-al";
+        new_argv[2] = "--color=auto";
+        int i = 1, j = 2;
+        while (argv[i] != NULL) {
+            new_argv[j++] = argv[i++];
+        }
+        new_argv[j] = NULL;
+        argv = new_argv;
+    }
     pid_t pid = fork();
     if (pid < 0) {
         perror("fork");
