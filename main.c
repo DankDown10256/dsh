@@ -24,11 +24,32 @@
 
 static int parse_line(char *line, char **argv) {
     int argc = 0;
-    char *tok = strtok(line, " \t\n");
-    while (tok && argc < MAX_ARGS - 1) {
-        argv[argc ++] = tok;
-        tok = strtok(NULL, " \t\n");
+    char *p = line;
+
+    while (*p) {
+        while (*p == ' ' || *p == '\t') p++;
+        if (*p == '\0') break;
+
+        if (*p == '"') {
+            p++;
+            argv[argc++] = p;
+            while (*p && *p != '"') p++;
+            if (*p == '"') {
+                *p = '\0';
+                p++;
+            }
+        } else {
+            argv[argc++] = p;
+            while (*p && *p != ' ' && *p != '\t') p++;
+            if (*p) {
+                *p = '\0';
+                p++;
+            }
+        }
+
+        if (argc >= MAX_ARGS - 1) break;
     }
+
     argv[argc] = NULL;
     return argc;
 }
