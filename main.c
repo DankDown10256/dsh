@@ -12,6 +12,7 @@
 #include <readline/history.h>
 #include <limits.h>
 #include <time.h>
+#include <signal.h>
 
 #define SLOW_CMD_THRESHOLD_SEC 5
 #define MAX_ARGS 64
@@ -213,6 +214,7 @@ static void run_external(char **argv) {
         return;
     }
     if (pid == 0) {
+        signal(SIGINT, SIG_DFL);
         execvp(argv[0], argv);
         fprintf(stderr, "%s: command not found\n", argv[0]);
         _exit(127);
@@ -231,6 +233,7 @@ static void run_external(char **argv) {
 }
 
 int main(void) {
+    signal(SIGINT, SIG_IGN);
     ensure_default_path();
     char line[MAX_LINE];
     char *argv[MAX_ARGS];
