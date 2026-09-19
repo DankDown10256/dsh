@@ -1,3 +1,4 @@
+#define _XOPEN_SOURCE 700
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -8,6 +9,7 @@
 #include <sys/stat.h>
 #include <readline/readline.h>
 #include <readline/history.h>
+#include <limits.h>
 
 #define MAX_ARGS 64
 #define MAX_LINE 1024
@@ -28,6 +30,37 @@ static int parse_line(char *line, char **argv) {
     }
     argv[argc] = NULL;
     return argc;
+}
+
+static int is_python_venv(char *out_path, size_t out_size) {
+    char *candidates[] = {"venv", ".venv", "env"};
+    struct stat st;
+    for (size_t i = 0; i < sizeof(candidates) / sizeof(candidates[0]); i++) {
+        if (stat(candidates[i], &st) == 0 && S_ISDIR(st.st_mode)) {
+            snprintf(out_path, out_size, "%s", candidates[i]);
+            return 1;
+        }
+    }
+    return 0;
+}
+
+static int activate_python_venv(const char *venv_path) {
+    char abs_venv[PATH_MAX];
+    if (!realpath(venv_path, abs_venv)) {
+        perror("realpath");
+        return 0;
+    }
+
+    setenv("VIRTUAL_ENV", abs_venv, 1);
+
+    char new_path[4096];
+    const char *old_path = getenv("PATH");
+    snprintf(new_path, sizeof(new_path), "%s/bin:%s", abs_venv, old_path ? old_path : "");
+    setenv("PATH", new_path, 1);
+
+    unsetenv("PYTHONHOME");
+
+    return 1;
 }
 
 static int is_git_repo(void) {
@@ -71,6 +104,23 @@ static int run_builtin(char **argv) {
         if (chdir(target) != 0) perror("cd");
         return 1;
     }
+    if (strcmp(argv[0], "acpyvenv") == 0) {
+        char venv_path[64];
+        if (is_python_venv(venv_path, sizeof(venv_path))) {
+            activate_python_venv(venv_path);
+        } else {
+            printf("Sorry there isn't python env in this directory\n");
+        }
+        return 1;
+    }
+    if (strcmp(argv[0], "help") == 0) {
+        printf("Help Menu\n");
+        printf("Commands:\n");
+        printf("help: show this menu\n");
+        printf("ls: list directories\n");
+        printf("cd: move to a given directory path\n");
+        printf("acpyvenv: detect and activate a python venv\n");
+    }
     return 0;
 }
 
@@ -99,7 +149,10 @@ int main(void) {
 
     while (1) {
         char prompt[256];
-        if (is_git_repo() && get_git_branch(branch, sizeof(branch))) {
+        char venv_path[64];
+        int has_git = is_git_repo() && get_git_branch(branch, sizeof(branch));
+        int has_venv = is_python_venv(venv_path, sizeof(venv_path));
+        if (has_git) {
             snprintf(prompt, sizeof(prompt), "[%s %s@dsh] ", branch, user);
         } else {
             snprintf(prompt, sizeof(prompt), "[%s@dsh] ", user);
