@@ -107,6 +107,12 @@ static int run_builtin(char **argv) {
         printf("ls: list directories\n");
         printf("cd: move to a given directory path\n");
         printf("acpyvenv: detect and activate a python venv\n");
+        printf("runwith: can do pipelines ex: <command> runwith <command>\n");
+        printf("dsh  Copyright (C) 2026  DankDown10256\n");
+        printf("This program comes with ABSOLUTELY NO WARRANTY.\n");
+        printf("This is free software, and you are welcome to redistribute it\n");
+        printf("under the terms of the GNU GPL v3 or later.\n");
+        printf("See the LICENSE file or <https://www.gnu.org/licenses/gpl-3.0.html>.\n");
     }
     if (strcmp(argv[0], "|") == 0) {
         printf("Usage runwith\n");
