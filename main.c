@@ -224,7 +224,7 @@ int main(void) {
         int has_git = is_git_repo() && get_git_branch(branch, sizeof(branch));
         int has_venv = is_python_venv(venv_path, sizeof(venv_path));
         if (has_git) {
-            snprintf(prompt, sizeof(prompt), "[%s %s@%s in %s] ", branch, user, hostname, display_cwd);
+            snprintf(prompt, sizeof(prompt), "[" COLOR_GREEN "%s" COLOR_BLUE " %s@%s" COLOR_CYAN " in %s] " COLOR_RESET, branch, user, hostname, display_cwd);
         } else {
             snprintf(prompt, sizeof(prompt), "[%s@%s in %s] ", user, hostname, display_cwd);
         }
