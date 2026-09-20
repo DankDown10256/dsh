@@ -16,6 +16,7 @@
 #include "src/py_venv.h"
 #include "src/git.h"
 #include "src/pipeline.h"
+#include "src/split_and.h"
 
 #define RL_START "\001"
 #define RL_END   "\002"
@@ -156,7 +157,7 @@ static int run_builtin(char **argv) {
     return 0;
 }
 
-static void run_external(char **argv) {
+static int run_external(char **argv) {
     struct timespec start, end;
     clock_gettime(CLOCK_MONOTONIC, &start);
     char *new_argv[MAX_ARGS];
@@ -174,7 +175,7 @@ static void run_external(char **argv) {
     pid_t pid = fork();
     if (pid < 0) {
         perror("fork");
-        return;
+        return 1;
     }
     if (pid == 0) {
         signal(SIGINT, SIG_DFL);
@@ -191,6 +192,11 @@ static void run_external(char **argv) {
     if (elapsed >= SLOW_CMD_THRESHOLD_SEC) {
         printf("The command %s is finished and took %1.fs\n", argv[0], elapsed);
     }
+
+    if (WIFEXITED(status)) {
+        return WEXITSTATUS(status);
+    }
+    return 1;
 }
 
 int main(void) {
@@ -248,8 +254,26 @@ int main(void) {
         int argc = parse_line(line, argv);
         if (argc == 0) continue;
 
-        if (run_builtin(argv)) continue;
+        char *left[MAX_ARGS];
+        char *right[MAX_ARGS];
 
+        if (split_and(argv, left, right)) {
+            int result;
+            if (run_builtin(left)) {
+                result = 0;
+            } else {
+                result = run_external(left);
+            }
+            if (result == 0) {
+                if (run_builtin(right)) {
+                    continue;
+                }
+                run_external(right);
+            }
+            continue;
+        }
+
+        if (run_builtin(argv)) continue;
         run_external(argv);
     }
 
