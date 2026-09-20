@@ -226,7 +226,7 @@ int main(void) {
         if (has_git) {
             snprintf(prompt, sizeof(prompt), "[" COLOR_GREEN "%s" COLOR_BLUE " %s@%s" COLOR_CYAN " in %s] " COLOR_RESET, branch, user, hostname, display_cwd);
         } else {
-            snprintf(prompt, sizeof(prompt), "[%s@%s in %s] ", user, hostname, display_cwd);
+            snprintf(prompt, sizeof(prompt), "[" COLOR_BLUE "%s@%s" COLOR_CYAN " in %s] " COLOR_RESET, user, hostname, display_cwd);
         }
 
         char *input = readline(prompt);
