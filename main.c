@@ -17,6 +17,8 @@
 #include "src/git.h"
 #include "src/pipeline.h"
 
+#define RL_START "\001"
+#define RL_END   "\002"
 #define SLOW_CMD_THRESHOLD_SEC 5
 #define MAX_ARGS 64
 #define MAX_LINE 1024
@@ -27,6 +29,10 @@
 #define COLOR_YELLOW  "\033[33m"
 #define COLOR_RED     "\033[31m"
 #define COLOR_CYAN    "\033[36m"
+#define P_RESET  RL_START COLOR_RESET  RL_END
+#define P_GREEN  RL_START COLOR_GREEN  RL_END
+#define P_BLUE   RL_START COLOR_BLUE   RL_END
+#define P_CYAN   RL_START COLOR_CYAN   RL_END
 
 static int parse_line(char *line, char **argv) {
     int argc = 0;
@@ -224,9 +230,9 @@ int main(void) {
         int has_git = is_git_repo() && get_git_branch(branch, sizeof(branch));
         int has_venv = is_python_venv(venv_path, sizeof(venv_path));
         if (has_git) {
-            snprintf(prompt, sizeof(prompt), "[" COLOR_GREEN "%s" COLOR_BLUE " %s@%s" COLOR_CYAN " in %s] " COLOR_RESET, branch, user, hostname, display_cwd);
+            snprintf(prompt, sizeof(prompt), "[" P_GREEN "%s" P_BLUE " %s@%s" P_CYAN " in %s] " P_RESET, branch, user, hostname, display_cwd);
         } else {
-            snprintf(prompt, sizeof(prompt), "[" COLOR_BLUE "%s@%s" COLOR_CYAN " in %s] " COLOR_RESET, user, hostname, display_cwd);
+            snprintf(prompt, sizeof(prompt), "[" P_BLUE "%s@%s" P_CYAN " in %s] " P_RESET, user, hostname, display_cwd);
         }
 
         char *input = readline(prompt);
