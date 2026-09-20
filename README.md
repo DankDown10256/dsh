@@ -5,6 +5,10 @@ Dsh is a shell that want to help developers to have a smoother workflow when the
 ## Features
 
 - Git repo detection and branch displayed.
+- Python venv handling (acpyvenv, deactivate)
+- Command timing when it takes more than 5 seconds
+- Pipelines support with runwith command
+- History
 
 ## Installation
 

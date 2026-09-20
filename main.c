@@ -177,9 +177,7 @@ static void run_external(char **argv) {
     double elapsed = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
 
     if (elapsed >= SLOW_CMD_THRESHOLD_SEC) {
-        char notif_cmd[256];
-        snprintf(notif_cmd, sizeof(notif_cmd), "notify-send 'dsh' 'Command %s is finished and took %1.fs'", argv[0], elapsed);
-        system(notif_cmd);
+        printf("The command %s is finished and took %1.fs\n", argv[0], elapsed);
     }
 }
 
