@@ -17,6 +17,8 @@
 #include "src/git.h"
 #include "src/pipeline.h"
 #include "src/split_and.h"
+#include "src/input_output.h"
+#include <fcntl.h>
 
 #define RL_START "\001"
 #define RL_END   "\002"
@@ -160,6 +162,8 @@ static int run_builtin(char **argv) {
 static int run_external(char **argv) {
     struct timespec start, end;
     clock_gettime(CLOCK_MONOTONIC, &start);
+    input_output_t redir;
+    extract_redir(argv, &redir);
     char *new_argv[MAX_ARGS];
     if (strcmp(argv[0], "ls") == 0) {
         new_argv[0] = "ls";
@@ -179,6 +183,27 @@ static int run_external(char **argv) {
     }
     if (pid == 0) {
         signal(SIGINT, SIG_DFL);
+
+        if (redir.out_file) {
+            int flags = O_WRONLY | O_CREAT | (redir.append ? O_APPEND : O_TRUNC);
+            int fd = open(redir.out_file, flags, 0644);
+            if (fd < 0) {
+                perror("open");
+                _exit(1);
+            }
+            dup2(fd, STDOUT_FILENO);
+            close(fd);
+        }
+
+        if (redir.in_file) {
+            int fd = open(redir.in_file, O_RDONLY);
+            if (fd < 0) {
+                perror("open");
+                _exit(1);
+            }
+            dup2(fd, STDIN_FILENO);
+            close(fd);
+        }
         execvp(argv[0], argv);
         fprintf(stderr, "%s: command not found\n", argv[0]);
         _exit(127);
