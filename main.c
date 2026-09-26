@@ -93,6 +93,14 @@ static int run_builtin(char **argv) {
     }
     if (strcmp(argv[0], "cd") == 0) {
         const char *target = argv[1] ? argv[1] : getenv("HOME");
+        if (target && target[0] == '~') {
+            char expanded[PATH_MAX];
+            const char *home = getenv("HOME");
+            if (home) {
+                snprintf(expanded, sizeof(expanded), "%s%s", home, target + 1);
+                target = expanded;
+            }
+        }
         if (chdir(target) != 0) perror("cd");
         return 1;
     }
