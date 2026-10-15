@@ -18,6 +18,7 @@
 #include "src/pipeline.h"
 #include "src/split_and.h"
 #include "src/input_output.h"
+#include "src/autocomplete.h"
 #include <fcntl.h>
 
 #define RL_START "\001"
@@ -234,6 +235,7 @@ static int run_external(char **argv) {
 
 int main(void) {
     signal(SIGINT, SIG_IGN);
+    autocomplete_setup();
     ensure_default_path();
     char line[MAX_LINE];
     char *argv[MAX_ARGS];
