@@ -271,7 +271,7 @@ int main(void) {
         if (has_git) {
             snprintf(prompt, sizeof(prompt), P_GREEN "%s" P_BLUE " %s@%s" P_CYAN " in %s % " P_RESET, branch, user, hostname, display_cwd);
         } else {
-            snprintf(prompt, sizeof(prompt), "[" P_BLUE "%s@%s" P_CYAN " in %s] " P_RESET, user, hostname, display_cwd);
+            snprintf(prompt, sizeof(prompt), P_BLUE "%s@%s" P_CYAN " in %s % " P_RESET, user, hostname, display_cwd);
         }
 
         char *input = readline(prompt);
